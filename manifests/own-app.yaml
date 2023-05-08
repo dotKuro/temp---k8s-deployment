@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: own-app
+  namespace: own-app
+  labels:
+    app: own-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: own-app
+  template:
+    metadata:
+      labels:
+        app: own-app
+    spec:
+      containers:
+        - name: own-app
+          image: ghcr.io/dotkuro/hello:latest
+          ports:
+            - name: http
+              containerPort: 3000
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+          imagePullPolicy: Always
+      imagePullSecrets:
+        - name: docker-container-registry
+      automountServiceAccountToken: false
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: own-app
+  namespace: own-app
+  labels:
+    app: own-app
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app: own-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: own-app
+  namespace: own-app
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    kubernetes.io/ingress.class: nginx
+spec:
+  tls:
+    - hosts:
+        - own.sellwerk-ws-prep.akampf.dev
+      secretName: own-app-tls
+  rules:
+    - host: own.sellwerk-ws-prep.akampf.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: own-app
+                port:
+                  name: http
