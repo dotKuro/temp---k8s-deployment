@@ -1,0 +1,43 @@
+name: deploy
+
+on: pull_request
+
+jobs:
+  deploy-own-app:
+    name: Deploy own app
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout out the repository
+        uses: actions/checkout@v2
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build docker image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: ./hello-world-server
+          tags:
+            ghcr.io/dotkuro/hello:latest
+
+      - name: install kubectl
+        uses: azure/setup-kubectl@v3
+      - name: setup kubectl
+        run: |
+          mkdir ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      - name: prepare secret
+        run: |
+          cat manifests/own-app-secret.yaml | DOCKER_TOKEN=${{ secrets.DOCKER_TOKEN }} envsubst > manifests/temp__secret.yaml
+      - name: deploy manifests
+        run: |
+          kubectl apply -f manifests/own-app-namespace.yaml
+          kubectl apply -f manifests/temp__secret.yaml
+          kubectl apply -f manifests/own-app.yaml
+      - name: verify deployment
+        run: |
+          kubectl --namespace 'own-app' rollout status 'deployment/own-app'
