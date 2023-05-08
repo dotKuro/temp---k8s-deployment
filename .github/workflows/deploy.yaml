@@ -10,7 +10,7 @@ jobs:
       - name: install kubectl
         uses: azure/setup-kubectl@v3
       - name: setup kubectl
-      - run: |
+        run: |
           mkdir ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       - name: deploy manifest
