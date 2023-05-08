@@ -3,8 +3,8 @@ name: deploy
 on: pull_request
 
 jobs:
-  deploy:
-    name: Deploy
+  deploy-test-app:
+    name: Deploy test app
     runs-on: ubuntu-latest
     steps:
       - name: checkout out the repository
@@ -17,7 +17,7 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       - name: deploy manifest
         run: |
-          kubectl apply -f all.yaml
+          kubectl apply -f manifests/test-app.yaml
       - name: verify deployment
         run: |
           kubectl --namespace 'test-app' rollout status 'deployment/test-app'
