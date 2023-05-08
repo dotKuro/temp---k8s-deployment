@@ -7,6 +7,8 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+      - name: checkout out the repository
+        uses: actions/checkout@v2
       - name: install kubectl
         uses: azure/setup-kubectl@v3
       - name: setup kubectl
