@@ -1,0 +1,20 @@
+name: deploy
+
+on: pull_request
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: install kubectl
+        uses: azure/setup-kubectl@v3
+      - name: setup kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > .kube/config
+      - name: deploy manifest
+        run: |
+          kubectl apply -f all.yaml
+      - name: verify deployment
+        run: |
+          kubectl --namespace 'test-app' rollout status 'deployment/test-app'
